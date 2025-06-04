@@ -1,0 +1,9 @@
+<!doctype html>
+<title>Leaderboard</title>
+<h1>Leaderboard</h1>
+<ol>
+{% for team in teams %}
+<li>{{ team.name }} - {{ team.wins }} wins</li>
+{% endfor %}
+</ol>
+<a href='/'>Back</a>
