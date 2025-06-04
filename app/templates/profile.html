@@ -1,0 +1,12 @@
+<!doctype html>
+<title>Profile</title>
+<h1>Welcome {{ current_user.username }}</h1>
+{% if current_user.team %}
+<p>Your team: {{ current_user.team.name }}</p>
+{% else %}
+<form method='post' action='/team/create'>
+Team name: <input name='name'>
+<button type='submit'>Create Team</button>
+</form>
+{% endif %}
+<a href='/'>Back to schedule</a>

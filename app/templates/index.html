@@ -1,0 +1,19 @@
+<!doctype html>
+<title>Pitch Schedule</title>
+<h1>Pitch Schedule</h1>
+<ul>
+{% for r in reservations %}
+<li>{{ r.start_time }} - {{ r.end_time }} reserved by user {{ r.user_id }}</li>
+{% endfor %}
+</ul>
+{% if current_user.is_authenticated %}
+<form method='post' action='/reservation'>
+Start: <input type='datetime-local' name='start'>
+End: <input type='datetime-local' name='end'>
+<button type='submit'>Reserve</button>
+</form>
+<a href='/logout'>Logout</a>
+{% else %}
+<a href='/login'>Login</a> | <a href='/register'>Register</a>
+{% endif %}
+<a href='/leaderboard'>Leaderboard</a>
