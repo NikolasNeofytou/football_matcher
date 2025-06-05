@@ -58,3 +58,9 @@ To build the frontend and serve it with Flask:
    python main.py
    ```
    Flask will serve the contents of `frontend/dist` at the root URL.
+
+### Troubleshooting
+
+If `npm run build` fails with the message `vite: not found`, it means the front‑end
+dependencies were not installed. Run `npm install` inside the `frontend` folder
+to install all development dependencies before building the React app.
