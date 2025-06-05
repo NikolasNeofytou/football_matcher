@@ -1,13 +1,32 @@
 from flask import render_template, redirect, url_for, request, flash
 from flask_login import login_user, logout_user, login_required, current_user
-from datetime import datetime
+from datetime import datetime, timedelta, time
 from . import app, db
 from .models import User, Team, Reservation, Match
 
 @app.route('/')
 def index():
-    reservations = Reservation.query.order_by(Reservation.start_time).all()
-    return render_template('index.html', reservations=reservations)
+    # build a weekly schedule starting today with hourly slots from 8 to 21
+    start_date = datetime.now().date()
+    hours = list(range(8, 22))
+    schedule = []
+    for day in range(7):
+        date = start_date + timedelta(days=day)
+        slots = []
+        for hr in hours:
+            slot_start = datetime.combine(date, time(hr, 0))
+            slot_end = slot_start + timedelta(hours=1)
+            reserved = Reservation.query.filter(
+                Reservation.start_time <= slot_start,
+                Reservation.end_time > slot_start
+            ).first()
+            slots.append({
+                'start': slot_start,
+                'end': slot_end,
+                'reserved': reserved is not None
+            })
+        schedule.append({'date': date, 'slots': slots})
+    return render_template('index.html', schedule=schedule, hours=hours)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

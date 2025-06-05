@@ -1,19 +1,37 @@
-<!doctype html>
-<title>Pitch Schedule</title>
+{% extends 'layout.html' %}
+{% block title %}Pitch Schedule{% endblock %}
+{% block content %}
 <h1>Pitch Schedule</h1>
-<ul>
-{% for r in reservations %}
-<li>{{ r.start_time }} - {{ r.end_time }} reserved by user {{ r.user_id }}</li>
-{% endfor %}
-</ul>
-{% if current_user.is_authenticated %}
-<form method='post' action='/reservation'>
-Start: <input type='datetime-local' name='start'>
-End: <input type='datetime-local' name='end'>
-<button type='submit'>Reserve</button>
-</form>
-<a href='/logout'>Logout</a>
-{% else %}
-<a href='/login'>Login</a> | <a href='/register'>Register</a>
-{% endif %}
-<a href='/leaderboard'>Leaderboard</a>
+<table class="schedule">
+    <thead>
+        <tr>
+            <th>Day</th>
+            {% for hour in hours %}
+            <th>{{ '%02d:00'|format(hour) }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for day in schedule %}
+        <tr>
+            <td>{{ day.date.strftime('%a %d %b') }}</td>
+            {% for slot in day.slots %}
+            <td class="{% if slot.reserved %}reserved{% else %}free{% endif %}">
+                {% if slot.reserved %}
+                    Reserved
+                {% elif current_user.is_authenticated %}
+                <form method="post" action="/reservation">
+                    <input type="hidden" name="start" value="{{ slot.start.isoformat() }}">
+                    <input type="hidden" name="end" value="{{ slot.end.isoformat() }}">
+                    <button type="submit">Reserve</button>
+                </form>
+                {% else %}
+                    Free
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
