@@ -40,3 +40,28 @@
 .read-the-docs {
   color: #888;
 }
+
+.schedule-grid {
+  border-collapse: collapse;
+  margin: 1rem auto;
+}
+
+.schedule-grid th,
+.schedule-grid td {
+  border: 1px solid #ccc;
+  width: 80px;
+  height: 40px;
+  text-align: center;
+}
+
+.schedule-grid td.free {
+  cursor: pointer;
+}
+
+.schedule-grid td.free:hover {
+  background-color: #d4edda;
+}
+
+.schedule-grid td.reserved {
+  background-color: #f8d7da;
+}
