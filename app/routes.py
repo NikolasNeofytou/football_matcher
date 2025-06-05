@@ -1,12 +1,12 @@
-from flask import render_template, redirect, url_for, request, flash
+from flask import jsonify, request, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
+import os
 from datetime import datetime, timedelta, time
 from . import app, db
 from .models import User, Team, Reservation, Match
 
-@app.route('/')
-def index():
-    # build a weekly schedule starting today with hourly slots from 8 to 21
+@app.route('/api/schedule')
+def api_schedule():
     start_date = datetime.now().date()
     hours = list(range(8, 22))
     schedule = []
@@ -21,79 +21,98 @@ def index():
                 Reservation.end_time > slot_start
             ).first()
             slots.append({
-                'start': slot_start,
-                'end': slot_end,
+                'start': slot_start.isoformat(),
+                'end': slot_end.isoformat(),
                 'reserved': reserved is not None
             })
-        schedule.append({'date': date, 'slots': slots})
-    return render_template('index.html', schedule=schedule, hours=hours)
+        schedule.append({'date': date.isoformat(), 'slots': slots})
+    return jsonify({'hours': hours, 'schedule': schedule})
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-        if User.query.filter_by(username=username).first():
-            flash('Username already taken')
-            return redirect(url_for('register'))
-        user = User(username=username, email=email, password=password)
-        db.session.add(user)
-        db.session.commit()
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username taken'}), 400
+    user = User(username=username, email=email, password=password)
+    db.session.add(user)
+    db.session.commit()
+    login_user(user)
+    return jsonify({'message': 'registered'})
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    user = User.query.filter_by(username=username, password=password).first()
+    if user:
         login_user(user)
-        return redirect(url_for('profile'))
-    return render_template('register.html')
+        return jsonify({'message': 'logged in'})
+    return jsonify({'error': 'Invalid credentials'}), 401
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username, password=password).first()
-        if user:
-            login_user(user)
-            return redirect(url_for('profile'))
-        flash('Invalid credentials')
-    return render_template('login.html')
-
-@app.route('/logout')
+@app.route('/api/logout')
 @login_required
-def logout():
+def api_logout():
     logout_user()
-    return redirect(url_for('index'))
+    return jsonify({'message': 'logged out'})
 
-@app.route('/profile')
+@app.route('/api/profile')
 @login_required
-def profile():
-    return render_template('profile.html')
+def api_profile():
+    team = None
+    if current_user.team:
+        team = {
+            'id': current_user.team.id,
+            'name': current_user.team.name,
+            'wins': current_user.team.wins,
+            'losses': current_user.team.losses
+        }
+    return jsonify({
+        'id': current_user.id,
+        'username': current_user.username,
+        'email': current_user.email,
+        'team': team
+    })
 
-@app.route('/reservation', methods=['POST'])
+@app.route('/api/reservation', methods=['POST'])
 @login_required
-def make_reservation():
-    start = datetime.fromisoformat(request.form['start'])
-    end = datetime.fromisoformat(request.form['end'])
+def api_make_reservation():
+    data = request.get_json()
+    start = datetime.fromisoformat(data['start'])
+    end = datetime.fromisoformat(data['end'])
     r = Reservation(user_id=current_user.id, start_time=start, end_time=end, paid=False)
     db.session.add(r)
     db.session.commit()
-    flash('Reservation made! Please pay at the counter.')
-    return redirect(url_for('index'))
+    return jsonify({'message': 'Reservation made'})
 
-@app.route('/team/create', methods=['POST'])
+@app.route('/api/team/create', methods=['POST'])
 @login_required
-def create_team():
-    name = request.form['name']
+def api_create_team():
+    data = request.get_json()
+    name = data.get('name')
     if Team.query.filter_by(name=name).first():
-        flash('Team name already exists')
-        return redirect(url_for('profile'))
+        return jsonify({'error': 'Team exists'}), 400
     team = Team(name=name)
     db.session.add(team)
     db.session.commit()
     current_user.team = team
     db.session.commit()
-    flash('Team created')
-    return redirect(url_for('profile'))
+    return jsonify({'message': 'team created'})
 
-@app.route('/leaderboard')
-def leaderboard():
+@app.route('/api/leaderboard')
+def api_leaderboard():
     teams = Team.query.order_by(Team.wins.desc()).all()
-    return render_template('leaderboard.html', teams=teams)
+    output = []
+    for t in teams:
+        output.append({'id': t.id, 'name': t.name, 'wins': t.wins, 'losses': t.losses})
+    return jsonify({'teams': output})
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    if path != '' and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, 'index.html')
