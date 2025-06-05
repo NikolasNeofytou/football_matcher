@@ -1,12 +1,14 @@
-<!doctype html>
-<title>Profile</title>
+{% extends 'layout.html' %}
+{% block title %}Profile{% endblock %}
+{% block content %}
 <h1>Welcome {{ current_user.username }}</h1>
 {% if current_user.team %}
 <p>Your team: {{ current_user.team.name }}</p>
 {% else %}
-<form method='post' action='/team/create'>
-Team name: <input name='name'>
-<button type='submit'>Create Team</button>
+<form method="post" action="/team/create">
+    Team name: <input name="name">
+    <button type="submit">Create Team</button>
 </form>
 {% endif %}
-<a href='/'>Back to schedule</a>
+<a href="/">Back to schedule</a>
+{% endblock %}

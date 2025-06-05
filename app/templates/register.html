@@ -1,8 +1,11 @@
-<!doctype html>
-<title>Register</title>
-<form method='post'>
-Username: <input name='username'>
-Email: <input name='email'>
-Password: <input type='password' name='password'>
-<button type='submit'>Register</button>
+{% extends 'layout.html' %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<h1>Register</h1>
+<form method="post">
+    Username: <input name="username">
+    Email: <input name="email">
+    Password: <input type="password" name="password">
+    <button type="submit">Register</button>
 </form>
+{% endblock %}

@@ -1,9 +1,11 @@
-<!doctype html>
-<title>Leaderboard</title>
+{% extends 'layout.html' %}
+{% block title %}Leaderboard{% endblock %}
+{% block content %}
 <h1>Leaderboard</h1>
 <ol>
 {% for team in teams %}
-<li>{{ team.name }} - {{ team.wins }} wins</li>
+    <li>{{ team.name }} - {{ team.wins }} wins</li>
 {% endfor %}
 </ol>
-<a href='/'>Back</a>
+<a href="/">Back</a>
+{% endblock %}
