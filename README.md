@@ -13,7 +13,14 @@ A simple Flask web application to manage football pitch reservations and teams.
    ```bash
    pip install -r requirements.txt
    ```
-2. Run the application:
+2. Build the React frontend (required before first run):
+   ```bash
+   cd frontend
+   npm install
+   npm run build
+   cd ..
+   ```
+3. Run the application:
    ```bash
    python main.py
    ```

@@ -113,6 +113,14 @@ def api_leaderboard():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):
-    if path != '' and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    return send_from_directory(app.static_folder, 'index.html')
+    """Serve the compiled React app or show a helpful message if missing."""
+    if os.path.exists(app.static_folder):
+        if path != '' and os.path.exists(os.path.join(app.static_folder, path)):
+            return send_from_directory(app.static_folder, path)
+        index_path = os.path.join(app.static_folder, 'index.html')
+        if os.path.exists(index_path):
+            return send_from_directory(app.static_folder, 'index.html')
+    return (
+        "Frontend build not found. Run 'npm run build' inside the frontend folder.",
+        404,
+    )
