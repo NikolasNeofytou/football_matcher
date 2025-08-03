@@ -1,8 +1,9 @@
 # Football Matcher
 
-A simple Flask web application to manage football pitch reservations and teams.
+A simple Flask web application to manage football or padel court reservations and teams.
 
 ## Features
+- Select from multiple clubs and view their weekly schedules
 - View pitch schedule and existing reservations
 - Register, login, and manage user profiles
 - Create teams and view a leaderboard

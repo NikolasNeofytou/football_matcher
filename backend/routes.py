@@ -5,28 +5,45 @@ from datetime import datetime, timedelta, time
 from . import app, db
 from .models import User, Team, Reservation, Match
 
-@app.route('/api/schedule')
-def api_schedule():
+# Simple in-memory club and reservation storage mimicking a Playtomic-like setup
+CLUBS = [
+    {"id": 1, "name": "Central Padel Club"},
+    {"id": 2, "name": "North Side Padel"},
+]
+
+RESERVATIONS = {1: set(), 2: set()}
+
+
+def build_schedule(club_id):
+    """Generate a weekly schedule for the given club."""
     start_date = datetime.now().date()
     hours = list(range(8, 22))
     schedule = []
+    reserved_slots = RESERVATIONS.get(club_id, set())
     for day in range(7):
         date = start_date + timedelta(days=day)
         slots = []
         for hr in hours:
             slot_start = datetime.combine(date, time(hr, 0))
             slot_end = slot_start + timedelta(hours=1)
-            reserved = Reservation.query.filter(
-                Reservation.start_time <= slot_start,
-                Reservation.end_time > slot_start
-            ).first()
+            key = (slot_start.isoformat(), slot_end.isoformat())
             slots.append({
-                'start': slot_start.isoformat(),
-                'end': slot_end.isoformat(),
-                'reserved': reserved is not None
+                "start": slot_start.isoformat(),
+                "end": slot_end.isoformat(),
+                "reserved": key in reserved_slots,
             })
-        schedule.append({'date': date.isoformat(), 'slots': slots})
-    return jsonify({'hours': hours, 'schedule': schedule})
+        schedule.append({"date": date.isoformat(), "slots": slots})
+    return {"hours": hours, "schedule": schedule}
+
+
+@app.route('/api/clubs')
+def api_clubs():
+    return jsonify({"clubs": CLUBS})
+
+
+@app.route('/api/clubs/<int:club_id>/schedule')
+def api_club_schedule(club_id):
+    return jsonify(build_schedule(club_id))
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
@@ -81,11 +98,15 @@ def api_profile():
 @login_required
 def api_make_reservation():
     data = request.get_json()
+    club_id = data.get('club_id')
     start = datetime.fromisoformat(data['start'])
     end = datetime.fromisoformat(data['end'])
+    # store reservation in DB for tracking (club not persisted)
     r = Reservation(user_id=current_user.id, start_time=start, end_time=end, paid=False)
     db.session.add(r)
     db.session.commit()
+    # mark slot as reserved for the selected club
+    RESERVATIONS.setdefault(club_id, set()).add((data['start'], data['end']))
     return jsonify({'message': 'Reservation made'})
 
 @app.route('/api/team/create', methods=['POST'])

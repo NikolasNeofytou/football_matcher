@@ -1,20 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
+import ClubContext from '../ClubContext'
 
 function Schedule() {
   const [data, setData] = useState(null)
   const [message, setMessage] = useState('')
+  const { clubId } = useContext(ClubContext)
 
   useEffect(() => {
-    fetch('/api/schedule')
+    if (!clubId) return
+    fetch(`/api/clubs/${clubId}/schedule`)
       .then(res => res.json())
       .then(setData)
-  }, [])
+  }, [clubId])
 
   const reserve = (slot) => {
     fetch('/api/reservation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ start: slot.start, end: slot.end })
+      body: JSON.stringify({ start: slot.start, end: slot.end, club_id: clubId })
     })
       .then(res => res.json())
       .then(res => {
@@ -23,17 +26,17 @@ function Schedule() {
         } else if (res.error) {
           setMessage(res.error)
         }
-        return fetch('/api/schedule')
+        return fetch(`/api/clubs/${clubId}/schedule`)
           .then(r => r.json())
           .then(setData)
       })
   }
-
+  if (!clubId) return <div>Please select a club to view the schedule.</div>
   if (!data) return <div>Loading...</div>
 
   return (
     <div>
-      <h2>Schedule</h2>
+      <h2>Schedule for Club {clubId}</h2>
       {message && <p>{message}</p>}
       <table className="schedule-grid">
         <thead>
